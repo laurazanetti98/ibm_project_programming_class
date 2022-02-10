@@ -12,7 +12,7 @@ print('Is there any null value? : ', null_value)
 
 plt.figure(figsize=(10, 6))
 my_explode = (0, 0.1)
-plt.pie(ibm_df['Attrition'].value_counts(), labels=ibm_df['Attrition'].value_counts().index, autopct='%1.2f%%')
+plt.pie(ibm_df['Attrition'].value_counts(), labels=ibm_df['Attrition'].value_counts().index, shadow=True, autopct='%1.2f%%', explode=my_explode)
 plt.title('Attrition')
 plt.show()
 
@@ -67,3 +67,20 @@ for i in range(len(ibm_df.columns)):
         plt.subplot(int(len(ibm_df.columns)/n), n, i+1)
         sns.countplot(ibm_df[ibm_df.columns[i]])
 plt.show()
+
+#Classification model
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+from sklearn.model_selection import train_test_split
+y = ibm_df['Attrition']
+x = ibm_df['AgeClass']
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=2)
+model = RandomForestClassifier()
+x_train = x_train.to_numpy().reshape(-1, 1)
+model.fit(x_train, y_train)
+x_test = x_test.to_numpy().reshape(-1, 1)
+y_pred = model.predict(x_test)
+accuracy_score(y_test, y_pred)
+print('The accuracy score is: ', accuracy_score(y_test, y_pred))
+
