@@ -20,18 +20,15 @@ plt.figure(figsize=(10, 6))
 ibm_df.Age.hist()
 plt.show()
 
-ibm_copy = ibm_df.copy()
-ibm_copy
-
 my_labels = ['18_30', '31_36', '37_43', '44_60']
 ibm_df['Age'] = pd.cut(ibm_df['Age'], bins=[17, 30, 36,	43, 60], labels=my_labels)
 
-ageclass = ibm_df.Age.replace( {'18_30':1, '31_36':2, '37_43':3, '44_60':4})
+ageclass = ibm_df.Age.replace({'18_30': 1, '31_36': 2, '37_43': 3, '44_60': 4})
 ibm_df['AgeClass'] = ageclass
-ibm_df =ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome',	'NumCompaniesWorked',	'WorkLifeBalance',	'YearsAtCompany']]
+ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome',	'NumCompaniesWorked',	'WorkLifeBalance',	'YearsAtCompany']]
 
 ibm_df['Attrition'].unique()
-ibm_df.Attrition.replace( { 'Yes':1, 'No':0}, inplace=True )
+ibm_df.Attrition.replace({'Yes': 1, 'No': 0}, inplace=True)
 
 ibm_df.drop(columns=['WorkLifeBalance'], inplace=True)
 ibm_df.head()
@@ -62,3 +59,11 @@ plt.ylabel('Years at the company')
 plt.show()
 
 ibm_df.info()
+
+n = 3
+fig_1 = plt.figure(figsize=(15, 15))
+for i in range(len(ibm_df.columns)):
+    if len(ibm_df[ibm_df.columns[i]].unique()) <= 6:
+        plt.subplot(int(len(ibm_df.columns)/n), n, i+1)
+        sns.countplot(ibm_df[ibm_df.columns[i]])
+plt.show()
