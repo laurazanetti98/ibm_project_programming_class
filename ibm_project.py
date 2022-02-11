@@ -1,6 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import streamlit as st
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
 
 csv = r'C:\Users\asus\Desktop\IBM.csv'
 ibm_df = pd.read_csv(csv, sep=',')
@@ -33,6 +38,13 @@ ibm_df.Attrition.replace({'Yes': 1, 'No': 0}, inplace=True)
 ibm_df.drop(columns=['WorkLifeBalance'], inplace=True)
 ibm_df.head()
 print(ibm_df.head())
+
+#Discretizing DistanceFromHome and adding DistanceClass
+Distance_labels = ['0_2', '3_6', '7_13', '14_28']
+ibm_df['DistanceFromHome'] = pd.cut(ibm_df['DistanceFromHome'], bins=[0,	2,	6,	13,	29], labels=Distance_labels)
+distanceclass = ibm_df.DistanceFromHome.replace({'0_2': 1, '3_6': 2, '7_13': 3, '14_28': 4})
+ibm_df['DistanceClass'] = distanceclass
+ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome', 'DistanceClass',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome',	'NumCompaniesWorked',	'YearsAtCompany']]
 
 plt.figure(figsize=(10, 6))
 ibm_df.Age.hist()
@@ -69,13 +81,11 @@ for i in range(len(ibm_df.columns)):
 plt.show()
 
 #Classification model
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-
-from sklearn.model_selection import train_test_split
 y = ibm_df['Attrition']
 x = ibm_df['AgeClass']
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=2)
+
+#RandomForestClassifier
 model = RandomForestClassifier()
 x_train = x_train.to_numpy().reshape(-1, 1)
 model.fit(x_train, y_train)
@@ -84,3 +94,33 @@ y_pred = model.predict(x_test)
 accuracy_score(y_test, y_pred)
 print('The accuracy score is: ', accuracy_score(y_test, y_pred))
 
+#GaussianNB
+model = GaussianNB()
+model.fit(x_train, y_train)
+y_pred = model.predict(x_test)
+sum(y_pred == y_test) / len(y_pred)
+print('The accuracy score is: ', accuracy_score(y_test, y_pred))
+
+#RandomForestClassifier with undersampling data
+yes_count = ibm_df[ibm_df['Attrition'] == 1].count()
+class_1 = int(yes_count[1])
+c1 = ibm_df[ibm_df['Attrition'] == 1]
+c0 = ibm_df[ibm_df['Attrition'] == 0]
+ibm_df_0 = c0.sample(class_1)
+undersampled_ibm_df = pd.concat([ibm_df_0, c1], axis=0)
+
+plt.figure(figsize=(10, 6))
+plt.pie(undersampled_ibm_df['Attrition'].value_counts(), labels=undersampled_ibm_df['Attrition'].value_counts().index, autopct='%1.2f%%')
+plt.title('Attrition')
+plt.show()
+
+y = undersampled_ibm_df['Attrition']
+x = undersampled_ibm_df['AgeClass']
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=undersampled_ibm_df['Attrition'])
+
+model = RandomForestClassifier()
+x_train = x_train.to_numpy().reshape(-1, 1)
+model.fit(x_train, y_train)
+x_test = x_test.to_numpy().reshape(-1, 1)
+y_pred = model.predict(x_test)
+print('The accuracy score is: ', accuracy_score(y_test, y_pred))
