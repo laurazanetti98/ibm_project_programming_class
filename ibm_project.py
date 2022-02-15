@@ -26,17 +26,16 @@ st.download_button(
  )
 
 st.write("")
-st.write('IBM is an American multinational technology corporation, with operations in over 171 countries. \n' 
-         'IBM produces and sells computer hardware, middleware and software, and provides hosting and consulting services in areas ranging from mainframe computers to nanotechnology')
-st.write('What will be done here is to build classification model(s) to predict the attrition of employees in a service-providing organization where\n'
-         'trained and experienced people are important assets.')
-csv = r'C:\Users\asus\Desktop\IBM.csv'
-ibm_df = pd.read_csv(csv, sep=',')
+st.write('''**IBM** is an American multinational technology corporation, with operations in over 171 countries. 
+IBM produces and sells computer hardware, middleware and software, and provides hosting and consulting services in areas ranging from mainframe computers to nanotechnology''')
+st.write('''What will be done here is to build **classification model(s) to predict the attrition of employees** in a service-providing organization where trained and experienced people are important assets.''')
 
 st.sidebar.subheader('Controls')
 st.sidebar.download_button('Download data as CSV', csv, file_name='ibm_df.csv')
 data_dictionary = st.sidebar.checkbox('Data dictionary')
 show_raw_data = st.sidebar.checkbox('Show raw data')
+st.text_area('Attrition',
+                value='''The term attrition refers to a gradual but deliberate reduction in staff numbers that occurs as employees retire or resign and are not replaced. It is commonly used to describe downsizing in a firm's employee pool by human resources (HR) professionals.''')
 
 if data_dictionary:
     st.subheader('Data dictionary')
@@ -191,10 +190,17 @@ for i in range(len(ibm_df.columns)):
 st.write(fig)
 plt.show()
 
+#RandomForestClassifier with undersample data
+yes_count = ibm_df[ibm_df['Attrition'] == 1].count()
+class_1 = int(yes_count[1])
+c1 = ibm_df[ibm_df['Attrition'] == 1]
+c0 = ibm_df[ibm_df['Attrition'] == 0]
+ibm_df_0 = c0.sample(class_1)
+undersample_ibm_df = pd.concat([ibm_df_0, c1], axis=0)
+
 with st.expander('Show model'):
 
     st.subheader('A model to predict the Attrition of employees')
-    y = ibm_df['Attrition']
     select_model = st.selectbox('Select model:', ['RandomForest', 'GaussianNB'])
 
     model = RandomForestClassifier()
@@ -205,10 +211,17 @@ with st.expander('Show model'):
 
     test_size = st.slider('Test size: ', min_value=0.1, max_value=0.9, step=0.1)
 
+    data_modelled = st.selectbox('Select data to analyse', ['unbalanced_data', 'undersample_data'])
+    y = ibm_df['Attrition']
+    if data_modelled == 'undersample_data':
+        y = undersample_ibm_df['Attrition']
+
     if len(choices) > 0 and st.button('RUN MODEL'):
         with st.spinner('Training...'):
             x = ibm_df['AgeClass']
-            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=2)
+            if data_modelled == 'undersample_data':
+                x = undersample_ibm_df['AgeClass']
+            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=y, random_state=2)
             x_train = x_train.to_numpy().reshape(-1, 1)
             model.fit(x_train, y_train)
             x_test = x_test.to_numpy().reshape(-1, 1)
@@ -216,10 +229,28 @@ with st.expander('Show model'):
             accuracy_score(y_test, y_pred)
             st.write('The accuracy score is: ', str(accuracy_score(y_test, y_pred)))
 
+with st.expander('What happenes when undersampling'):
+    col_1, col_2 = st.columns(2)
+    with col_1:
+        st.subheader('How Attrition was distributed:')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plt.pie(ibm_df['Attrition'].value_counts(), labels=ibm_df['Attrition'].value_counts().index,
+                autopct='%1.2f%%')
+        st.pyplot(fig)
+        st.caption('Attrition')
+
+    with col_2:
+        st.subheader('How Attrition is now distributed:')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plt.pie(undersample_ibm_df['Attrition'].value_counts(),
+                labels=undersample_ibm_df['Attrition'].value_counts().index, autopct='%1.2f%%')
+        st.pyplot(fig)
+        st.caption('Attrition')
+
 #Classification model
 y = ibm_df['Attrition']
 x = ibm_df['AgeClass']
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, random_state=2)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=ibm_df['Attrition'], random_state=2)
 
 #RandomForestClassifier
 model = RandomForestClassifier()
@@ -243,16 +274,11 @@ class_1 = int(yes_count[1])
 c1 = ibm_df[ibm_df['Attrition'] == 1]
 c0 = ibm_df[ibm_df['Attrition'] == 0]
 ibm_df_0 = c0.sample(class_1)
-undersampled_ibm_df = pd.concat([ibm_df_0, c1], axis=0)
+undersample_ibm_df = pd.concat([ibm_df_0, c1], axis=0)
 
-plt.figure(figsize=(10, 6))
-plt.pie(undersampled_ibm_df['Attrition'].value_counts(), labels=undersampled_ibm_df['Attrition'].value_counts().index, autopct='%1.2f%%')
-plt.title('Attrition')
-plt.show()
-
-y = undersampled_ibm_df['Attrition']
-x = undersampled_ibm_df['AgeClass']
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=undersampled_ibm_df['Attrition'])
+y = undersample_ibm_df['Attrition']
+x = undersample_ibm_df['AgeClass']
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=undersample_ibm_df['Attrition'])
 
 model = RandomForestClassifier()
 x_train = x_train.to_numpy().reshape(-1, 1)
