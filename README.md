@@ -1,1 +1,0 @@
-# ibm_project_programming_class
