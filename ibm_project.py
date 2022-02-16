@@ -61,8 +61,6 @@ if show_raw_data:
     st.subheader('Raw data')
     st.write(ibm_df)
 
-st.write(ibm_df.info())
-
 null_value = ibm_df.isnull().values.any()
 st.write('Is there any null value? : ', str(null_value))
 
@@ -86,10 +84,10 @@ with col_2:
     st.caption('Ages distribution')
 
 #Discretizing Age in 4 classes and trasforming Attrition and MaritalStatus values
-my_labels = ['18_30', '31_36', '37_43', '44_60']
-ibm_df['Age'] = pd.cut(ibm_df['Age'], bins=[17, 30, 36,	43, 60], labels=my_labels)
+my_labels = ['18_28', '29_39', '40_49', '50_60']
+ibm_df['Age'] = pd.cut(ibm_df['Age'], bins=[17, 28, 38,	49, 60], labels=my_labels)
 
-ageclass = ibm_df.Age.replace({'18_30': 1, '31_36': 2, '37_43': 3, '44_60': 4})
+ageclass = ibm_df.Age.replace({'18_28': 1, '29_39': 2, '40_49': 3, '50_60': 4})
 ibm_df['AgeClass'] = ageclass
 ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome',	'NumCompaniesWorked',	'WorkLifeBalance',	'YearsAtCompany']]
 
@@ -103,9 +101,9 @@ ibm_df.head()
 print(ibm_df.head())
 
 #Discretizing DistanceFromHome and MonthlyIncome + adding DistanceClass and IncomeClass
-Distance_labels = ['0_2', '3_6', '7_13', '14_28']
-ibm_df['DistanceFromHome'] = pd.cut(ibm_df['DistanceFromHome'], bins=[0,	2,	6,	13,	29], labels=Distance_labels)
-distanceclass = ibm_df.DistanceFromHome.replace({'0_2': 1, '3_6': 2, '7_13': 3, '14_28': 4})
+Distance_labels = ['0_5', '6_13', '14_21', '22_28']
+ibm_df['DistanceFromHome'] = pd.cut(ibm_df['DistanceFromHome'], bins=[0,	5,	13,	21,	29], labels=Distance_labels)
+distanceclass = ibm_df.DistanceFromHome.replace({'0_5': 1, '6_13': 2, '14_21': 3, '22_28': 4})
 ibm_df['DistanceClass'] = distanceclass
 ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome', 'DistanceClass',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome',	'NumCompaniesWorked',	'YearsAtCompany']]
 
@@ -124,11 +122,11 @@ if data_dict_after_manipulation:
     st.markdown(
         """
         * **Age**: Age of employee
-        * **AgeClass**: 1-'18_30'; 2-'31_36'; 3-'37_43'; 4-'44_60'
+        * **AgeClass**: 1-'18_28'; 2-'29_39'; 3-'40_49'; 4-'50_60'
         * **Attrition**: Employee attrition status
         * **Department**: Department of work
         * **DistanceFromHome**
-        * **DistanceClass**: 1-'0_2'; 2-'3_6'; 3-'7_13'; 4-'14_28'
+        * **DistanceClass**: 1-'0_5'; 2-'6_13'; 3-'14_21'; 4-'22_28'
         * **Education**: 1-Below College; 2- College; 3-Bachelor; 4-Master; 5-Doctor;
         * **EducationField**
         * **EnvironmentSatisfaction**: 1-Low; 2-Medium; 3-High; 4-Very High;
@@ -148,7 +146,7 @@ col_1, col_2 = st.columns(2)
 with col_1:
     st.subheader('What is Age distribution now?')
     fig, ax = plt.subplots(figsize=(10, 6))
-    ibm_df.Age.hist(ax=ax)
+    ibm_df.Age.sort_values(ascending=True).hist(ax=ax)
     ax.set_xlabel('Age')
     ax.set_ylabel('Count')
     st.pyplot(fig)
@@ -180,7 +178,7 @@ col_1, col_2 = st.columns(2)
 with col_1:
     st.subheader('What is the MonthlyIncome distribution?')
     fig, ax = plt.subplots(figsize=(10, 6))
-    ibm_df.MonthlyIncome.hist(ax=ax)
+    ibm_df.MonthlyIncome.sort_values(ascending=True).hist(ax=ax)
     ax.set_xlabel('MonthlyIncome')
     ax.set_ylabel('Count')
     st.pyplot(fig)
@@ -189,6 +187,7 @@ with col_1:
 with col_2:
     st.subheader('Is MonthlyIncome correlated to Attrition?')
     st.write(ibm_df[['MonthlyIncome', 'Attrition']].groupby('MonthlyIncome', as_index=False).mean())
+
 
 #Correlation Matrix
 st.subheader('Correlation Matrix')
@@ -205,11 +204,10 @@ plt.xlabel('Age')
 plt.ylabel('Years at the company')
 plt.show()
 
-ibm_df.info()
 
-st.subheader('Distribution of the different attributes')
+st.subheader('Distribution of the different variables')
 n = 3
-fig = plt.figure(figsize=(15, 15))
+fig = plt.figure(figsize=(20, 18))
 for i in range(len(ibm_df.columns)):
     if len(ibm_df[ibm_df.columns[i]].unique()) <= 6:
         plt.subplot(int(len(ibm_df.columns)/n), n, i+1)
@@ -240,7 +238,7 @@ with st.expander('Show model'):
 
     test_size = st.slider('Test size: ', min_value=0.1, max_value=0.9, step=0.1)
 
-    data_modelled = st.selectbox('Select data to analyse', ['unbalanced_data', 'undersample_data'])
+    data_modelled = st.selectbox('Select data to analyse', ['imbalanced_data', 'undersample_data'])
     y = ibm_df['Attrition']
     if data_modelled == 'undersample_data':
         y = undersample_ibm_df['Attrition']
@@ -252,7 +250,7 @@ with st.expander('Show model'):
                 x = undersample_ibm_df[choices]
             train_model(x, y, model, random_state=42, test_size=test_size)
 
-with st.expander('What happenes when undersampling'):
+with st.expander('What happens when undersampling'):
     col_1, col_2 = st.columns(2)
     with col_1:
         st.subheader('How Attrition was distributed:')
@@ -263,9 +261,15 @@ with st.expander('What happenes when undersampling'):
         st.caption('Attrition')
 
     with col_2:
-        st.subheader('How Attrition is now distributed:')
+        st.subheader('How Attrition is distributed with undersampling data:')
         fig, ax = plt.subplots(figsize=(10, 6))
         plt.pie(undersample_ibm_df['Attrition'].value_counts(),
                 labels=undersample_ibm_df['Attrition'].value_counts().index, autopct='%1.2f%%')
         st.pyplot(fig)
         st.caption('Attrition')
+
+    st.text_area('Undersampling data', value='The original dataset is unbalanced as the NO value in Attrition is predominant confronted with the YES value. '
+                 'For the  company’s machine learning algorithm to draw conclusions about Attrition, they have to account for this difference. '
+                 'Resampling (in this case undersampling) the data is usefull to reduce the risk of the analysis or machine learning algorithm skewing toward the majority. '
+                 'Undersampling can correct this issue and make the minority class equal to the majority class for the purpose of the data analysis. '
+                 'Unfortunately in this case the accuracy of the classification model with the undersample data is  inferior to the one obtained with the imbalanced data.')
