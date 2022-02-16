@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
+from functions import train_model
 
 st.set_page_config(
     page_title="IBM Attrition analysis",
@@ -35,7 +36,7 @@ st.sidebar.download_button('Download data as CSV', csv, file_name='ibm_df.csv')
 data_dictionary = st.sidebar.checkbox('Data dictionary')
 show_raw_data = st.sidebar.checkbox('Show raw data')
 st.text_area('Attrition',
-                value='''The term attrition refers to a gradual but deliberate reduction in staff numbers that occurs as employees retire or resign and are not replaced. It is commonly used to describe downsizing in a firm's employee pool by human resources (HR) professionals.''')
+value='''The term attrition refers to a gradual but deliberate reduction in staff numbers that occurs as employees retire or resign and are not replaced. It is commonly used to describe downsizing in a firm's employee pool by human resources (HR) professionals.''')
 
 if data_dictionary:
     st.subheader('Data dictionary')
@@ -84,7 +85,7 @@ with col_2:
     st.pyplot(fig)
     st.caption('Ages distribution')
 
-#Discretizing Age in 4 classes and trasforming Attrition values
+#Discretizing Age in 4 classes and trasforming Attrition and MaritalStatus values
 my_labels = ['18_30', '31_36', '37_43', '44_60']
 ibm_df['Age'] = pd.cut(ibm_df['Age'], bins=[17, 30, 36,	43, 60], labels=my_labels)
 
@@ -94,6 +95,8 @@ ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome
 
 ibm_df['Attrition'].unique()
 ibm_df.Attrition.replace({'Yes': 1, 'No': 0}, inplace=True)
+ibm_df['MaritalStatus'].unique()
+ibm_df.MaritalStatus.replace({'Single': 1, 'Married': 2, 'Divorced': 0}, inplace=True)
 
 ibm_df.drop(columns=['WorkLifeBalance'], inplace=True)
 ibm_df.head()
@@ -106,13 +109,36 @@ distanceclass = ibm_df.DistanceFromHome.replace({'0_2': 1, '3_6': 2, '7_13': 3, 
 ibm_df['DistanceClass'] = distanceclass
 ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome', 'DistanceClass',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome',	'NumCompaniesWorked',	'YearsAtCompany']]
 
-Income_labels = ['(990.01, 5756.5]' ,'(5756.5, 10504.0]' ,'(10504.0, 15251.5]' ,'(15251.5, 19999.0]']
+Income_labels = ['(990.01, 5756.5]', '(5756.5, 10504.0]', '(10504.0, 15251.5]', '(15251.5, 19999.0]']
 ibm_df['MonthlyIncome'] = pd.cut(ibm_df['MonthlyIncome'], bins=4, labels=Income_labels)
-incomeclass = ibm_df.MonthlyIncome.replace( {'(990.01, 5756.5]': 1, '(5756.5, 10504.0]': 2, '(10504.0, 15251.5]': 3, '(15251.5, 19999.0]': 4})
+incomeclass = ibm_df.MonthlyIncome.replace({'(990.01, 5756.5]': 1, '(5756.5, 10504.0]': 2, '(10504.0, 15251.5]': 3, '(15251.5, 19999.0]': 4})
 ibm_df['IncomeClass'] = incomeclass
-ibm_df =ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome','DistanceClass',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome', 'IncomeClass',	'NumCompaniesWorked',	'YearsAtCompany']]
+ibm_df = ibm_df[['Age', 'AgeClass', 'Attrition',	'Department',	'DistanceFromHome', 'DistanceClass',	'Education',	'EducationField',	'EnvironmentSatisfaction',	'JobSatisfaction',	'MaritalStatus',	'MonthlyIncome', 'IncomeClass',	'NumCompaniesWorked',	'YearsAtCompany']]
 
+#Data after data wrangling
+data_dict_after_manipulation = st.sidebar.checkbox('Data dict after manipulation')
 show_manipulated_data = st.sidebar.checkbox('Show manipulated data')
+
+if data_dict_after_manipulation:
+    st.subheader('Data dictionary after manipulation')
+    st.markdown(
+        """
+        * **Age**: Age of employee
+        * **AgeClass**: 1-'18_30'; 2-'31_36'; 3-'37_43'; 4-'44_60'
+        * **Attrition**: Employee attrition status
+        * **Department**: Department of work
+        * **DistanceFromHome**
+        * **DistanceClass**: 1-'0_2'; 2-'3_6'; 3-'7_13'; 4-'14_28'
+        * **Education**: 1-Below College; 2- College; 3-Bachelor; 4-Master; 5-Doctor;
+        * **EducationField**
+        * **EnvironmentSatisfaction**: 1-Low; 2-Medium; 3-High; 4-Very High;
+        * **JobSatisfaction**: 1-Low; 2-Medium; 3-High; 4-Very High;
+        * **MaritalStatus**: 1-Single; 2-Married; 0-Divorced
+        * **MonthlyIncome**
+        * **IncomeClass**: 1-(990.01, 5756.5]; 2-(5756.5, 10504.0]; 3-(10504.0, 15251.5]; 4-(15251.5, 19999.0]
+        * **NumCompaniesWorked:** Number of companies worked prior to IBM
+        * **YearsAtCompany**: Current years of service in IBM'
+        """)
 
 if show_manipulated_data:
     st.subheader('Data after manipulation')
@@ -164,6 +190,7 @@ with col_2:
     st.subheader('Is MonthlyIncome correlated to Attrition?')
     st.write(ibm_df[['MonthlyIncome', 'Attrition']].groupby('MonthlyIncome', as_index=False).mean())
 
+#Correlation Matrix
 st.subheader('Correlation Matrix')
 fig, ax = plt.subplots(figsize=(10, 6))
 ibm_corr = ibm_df.corr()
@@ -190,7 +217,8 @@ for i in range(len(ibm_df.columns)):
 st.write(fig)
 plt.show()
 
-#RandomForestClassifier with undersample data
+
+#undersample data
 yes_count = ibm_df[ibm_df['Attrition'] == 1].count()
 class_1 = int(yes_count[1])
 c1 = ibm_df[ibm_df['Attrition'] == 1]
@@ -198,6 +226,7 @@ c0 = ibm_df[ibm_df['Attrition'] == 0]
 ibm_df_0 = c0.sample(class_1)
 undersample_ibm_df = pd.concat([ibm_df_0, c1], axis=0)
 
+#Classification models
 with st.expander('Show model'):
 
     st.subheader('A model to predict the Attrition of employees')
@@ -207,7 +236,7 @@ with st.expander('Show model'):
     if select_model == 'GaussianNB':
         model = GaussianNB()
 
-    choices = st.multiselect('Select features', ['AgeClass', 'MonthlyIncome', 'DistanceFromHome'])
+    choices = st.multiselect('Select features', ['AgeClass', 'IncomeClass', 'YearsAtCompany', 'MaritalStatus'])
 
     test_size = st.slider('Test size: ', min_value=0.1, max_value=0.9, step=0.1)
 
@@ -218,16 +247,10 @@ with st.expander('Show model'):
 
     if len(choices) > 0 and st.button('RUN MODEL'):
         with st.spinner('Training...'):
-            x = ibm_df['AgeClass']
+            x = ibm_df[choices]
             if data_modelled == 'undersample_data':
-                x = undersample_ibm_df['AgeClass']
-            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=y, random_state=2)
-            x_train = x_train.to_numpy().reshape(-1, 1)
-            model.fit(x_train, y_train)
-            x_test = x_test.to_numpy().reshape(-1, 1)
-            y_pred = model.predict(x_test)
-            accuracy_score(y_test, y_pred)
-            st.write('The accuracy score is: ', str(accuracy_score(y_test, y_pred)))
+                x = undersample_ibm_df[choices]
+            train_model(x, y, model, random_state=42, test_size=test_size)
 
 with st.expander('What happenes when undersampling'):
     col_1, col_2 = st.columns(2)
@@ -246,43 +269,3 @@ with st.expander('What happenes when undersampling'):
                 labels=undersample_ibm_df['Attrition'].value_counts().index, autopct='%1.2f%%')
         st.pyplot(fig)
         st.caption('Attrition')
-
-#Classification model
-y = ibm_df['Attrition']
-x = ibm_df['AgeClass']
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=ibm_df['Attrition'], random_state=2)
-
-#RandomForestClassifier
-model = RandomForestClassifier()
-x_train = x_train.to_numpy().reshape(-1, 1)
-model.fit(x_train, y_train)
-x_test = x_test.to_numpy().reshape(-1, 1)
-y_pred = model.predict(x_test)
-accuracy_score(y_test, y_pred)
-st.write('The accuracy score is: ', str(accuracy_score(y_test, y_pred)))
-
-#GaussianNB
-model = GaussianNB()
-model.fit(x_train, y_train)
-y_pred = model.predict(x_test)
-sum(y_pred == y_test) / len(y_pred)
-st.write('The accuracy score is: ', str(accuracy_score(y_test, y_pred)))
-
-#RandomForestClassifier with undersample data
-yes_count = ibm_df[ibm_df['Attrition'] == 1].count()
-class_1 = int(yes_count[1])
-c1 = ibm_df[ibm_df['Attrition'] == 1]
-c0 = ibm_df[ibm_df['Attrition'] == 0]
-ibm_df_0 = c0.sample(class_1)
-undersample_ibm_df = pd.concat([ibm_df_0, c1], axis=0)
-
-y = undersample_ibm_df['Attrition']
-x = undersample_ibm_df['AgeClass']
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.4, stratify=undersample_ibm_df['Attrition'])
-
-model = RandomForestClassifier()
-x_train = x_train.to_numpy().reshape(-1, 1)
-model.fit(x_train, y_train)
-x_test = x_test.to_numpy().reshape(-1, 1)
-y_pred = model.predict(x_test)
-print('The accuracy score is: ', accuracy_score(y_test, y_pred))
